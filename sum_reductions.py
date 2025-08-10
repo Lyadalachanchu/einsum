@@ -11,7 +11,6 @@ def barebones_einsum(tensor_a, tensor_b, common_dims, output_shape, reduce_dims)
     # Ranges for non-common dimensions (for iteration)
     a_noncommon_ranges = [range(size) for idx, size in enumerate(tensor_a.shape) if idx not in common_dims]
     b_noncommon_ranges = [range(size) for idx, size in enumerate(tensor_b.shape) if idx not in common_dims]
-
     # Cartesian products: all possible indices for non-common dims
     a_index_combinations = product(*a_noncommon_ranges)
     b_index_combinations = product(*b_noncommon_ranges)
@@ -25,9 +24,9 @@ def barebones_einsum(tensor_a, tensor_b, common_dims, output_shape, reduce_dims)
             full_a_indices = list(a_indices)
             full_b_indices = list(b_indices)
             for dim_idx, common_idx in enumerate(common_indices):
+                # Insert curr common idx at the position of the dim in common_dims
                 full_a_indices.insert(common_dims[dim_idx], common_idx)
                 full_b_indices.insert(common_dims[dim_idx], common_idx)
-
             total += tensor_a[*full_a_indices] * tensor_b[*full_b_indices]
 
         # Store the total in the result tensor
@@ -38,14 +37,14 @@ def barebones_einsum(tensor_a, tensor_b, common_dims, output_shape, reduce_dims)
 
 if __name__ == "__main__":
     # Example input tensors
-    tensor_a = torch.rand(1, 2)
-    tensor_b = torch.rand(1, 3)
+    tensor_a = torch.rand(2, 2, 1)  # Shape: (i, j, l)
+    tensor_b = torch.rand(2, 2, 3)  # Shape: (i, j, k)
 
     # Index positions of common dimensions (shared axes)
-    common_dims = [0]
+    common_dims = [0, 1]
 
     # For now, assume non-contracted dims of A appear before non-contracted dims of B
-    output_shape = torch.Size((2, 3))
+    output_shape = torch.Size((1, 3))  # Shape before reduction: (last dim of A, last dim of B)
     # TODO: Somehow infer the intermediate output shape
     # output_shape = torch.size(3)
 
@@ -54,4 +53,4 @@ if __name__ == "__main__":
 
     result = barebones_einsum(tensor_a, tensor_b, common_dims, output_shape, reduce_dims)
     print(result)
-    print(torch.einsum("ij, ik -> k", tensor_a, tensor_b))
+    print(torch.einsum("ijl, ijk -> k", tensor_a, tensor_b))
